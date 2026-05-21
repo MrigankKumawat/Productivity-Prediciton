@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Productivity Predictor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0f14;
+      --surface: #13161d;
+      --card: #181c25;
+      --border: #252a38;
+      --accent: #7fffb2;
+      --accent2: #4fd8ff;
+      --warn: #ff6b6b;
+      --text: #e8eaf0;
+      --muted: #6b7280;
+      --radius: 14px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 40px 20px 80px;
+    }
+
+    /* background grid */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(127,255,178,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(127,255,178,.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    .container {
+      position: relative; z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* header */
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .badge {
+      display: inline-block;
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid rgba(127,255,178,.3);
+      border-radius: 100px;
+      padding: 5px 14px;
+      margin-bottom: 18px;
+      background: rgba(127,255,178,.06);
+    }
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -.02em;
+    }
+    h1 span { color: var(--accent); }
+    header p {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 300;
+    }
+
+    /* form card */
+    .form-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+    }
+
+    .section-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 18px;
+      margin-bottom: 32px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .field-row {
+      display: flex;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: border-color .2s;
+    }
+    .field-row:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(127,255,178,.08);
+    }
+    .field-row input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      background: transparent;
+      height: 36px;
+      padding: 0 12px;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(127,255,178,.5);
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+    }
+    .val-badge {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      background: rgba(127,255,178,.08);
+      padding: 6px 10px;
+      min-width: 52px;
+      text-align: center;
+      border-left: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    /* predict button */
+    .predict-btn {
+      width: 100%;
+      padding: 16px;
+      background: var(--accent);
+      color: #0d0f14;
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s, opacity .2s;
+      box-shadow: 0 0 24px rgba(127,255,178,.25);
+    }
+    .predict-btn:hover { transform: translateY(-1px); box-shadow: 0 0 36px rgba(127,255,178,.4); }
+    .predict-btn:active { transform: translateY(0); }
+    .predict-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    /* result */
+    #result {
+      margin-top: 28px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 28px 32px;
+      display: none;
+      animation: fadeUp .4s ease;
+    }
+    #result.show { display: flex; gap: 32px; align-items: center; flex-wrap: wrap; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .score-ring {
+      position: relative;
+      width: 110px; height: 110px;
+      flex-shrink: 0;
+    }
+    .score-ring svg { transform: rotate(-90deg); }
+    .score-ring circle { fill: none; stroke-width: 8; }
+    .ring-bg { stroke: var(--border); }
+    .ring-fill { stroke-dasharray: 283; stroke-dashoffset: 283; stroke-linecap: round; transition: stroke-dashoffset 1s ease, stroke .4s; }
+    .score-center {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .score-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 24px; font-weight: 800;
+      line-height: 1;
+    }
+    .score-unit { font-size: 10px; color: var(--muted); font-weight: 500; }
+
+    .result-info { flex: 1; }
+    .result-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px; font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .result-msg { font-size: 14px; color: var(--muted); font-weight: 300; line-height: 1.6; }
+
+    /* label colors */
+    .label-High  { color: var(--accent); }
+    .label-Medium { color: var(--accent2); }
+    .label-Low   { color: var(--warn); }
+    .ring-High   { stroke: var(--accent); }
+    .ring-Medium { stroke: var(--accent2); }
+    .ring-Low    { stroke: var(--warn); }
+
+    /* error toast */
+    #error-toast {
+      display: none;
+      background: rgba(255,107,107,.12);
+      border: 1px solid rgba(255,107,107,.3);
+      color: var(--warn);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="badge">ML Prediction Model</div>
+    <h1>Student <span>Productivity</span><br>Predictor</h1>
+    <p>Adjust your daily habits below and get an instant productivity score.</p>
+  </header>
+
+  <div class="form-card">
+
+    <!-- Study & Academics -->
+    <div class="section-label">📚 Study &amp; Academics</div>
+    <div class="grid">
+      <div class="field">
+        <label>Study Hours / Day</label>
+        <div class="field-row">
+          <input type="range" id="study_hours_per_day" min="0.5" max="10" step="0.5" value="5">
+          <div class="val-badge" id="v_study_hours_per_day">5</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Assignments Completed</label>
+        <div class="field-row">
+          <input type="range" id="assignments_completed" min="0" max="19" step="1" value="9">
+          <div class="val-badge" id="v_assignments_completed">9</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Attendance %</label>
+        <div class="field-row">
+          <input type="range" id="attendance_percentage" min="40" max="100" step="1" value="70">
+          <div class="val-badge" id="v_attendance_percentage">70</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Focus Score</label>
+        <div class="field-row">
+          <input type="range" id="focus_score" min="30" max="99" step="1" value="64">
+          <div class="val-badge" id="v_focus_score">64</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen Time -->
+    <div class="section-label">📱 Screen Time</div>
+    <div class="grid">
+      <div class="field">
+        <label>Phone Usage (hrs)</label>
+        <div class="field-row">
+          <input type="range" id="phone_usage_hours" min="0.5" max="12" step="0.5" value="6">
+          <div class="val-badge" id="v_phone_usage_hours">6</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Social Media (hrs)</label>
+        <div class="field-row">
+          <input type="range" id="social_media_hours" min="0" max="8" step="0.5" value="4">
+          <div class="val-badge" id="v_social_media_hours">4</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>YouTube (hrs)</label>
+        <div class="field-row">
+          <input type="range" id="youtube_hours" min="0" max="6" step="0.5" value="3">
+          <div class="val-badge" id="v_youtube_hours">3</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Gaming (hrs)</label>
+        <div class="field-row">
+          <input type="range" id="gaming_hours" min="0" max="6" step="0.5" value="3">
+          <div class="val-badge" id="v_gaming_hours">3</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Health & Lifestyle -->
+    <div class="section-label">🏃 Health &amp; Lifestyle</div>
+    <div class="grid">
+      <div class="field">
+        <label>Sleep (hrs)</label>
+        <div class="field-row">
+          <input type="range" id="sleep_hours" min="4.5" max="9.5" step="0.5" value="7">
+          <div class="val-badge" id="v_sleep_hours">7</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Exercise (mins)</label>
+        <div class="field-row">
+          <input type="range" id="exercise_minutes" min="15" max="105" step="5" value="60">
+          <div class="val-badge" id="v_exercise_minutes">60</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Stress Level (1-9)</label>
+        <div class="field-row">
+          <input type="range" id="stress_level" min="2" max="9" step="0.5" value="5">
+          <div class="val-badge" id="v_stress_level">5</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Coffee (mg caffeine)</label>
+        <div class="field-row">
+          <input type="range" id="coffee_intake_mg" min="0" max="499" step="10" value="250">
+          <div class="val-badge" id="v_coffee_intake_mg">250</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Breaks / Day</label>
+        <div class="field-row">
+          <input type="range" id="breaks_per_day" min="1" max="14" step="1" value="7">
+          <div class="val-badge" id="v_breaks_per_day">7</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="predict-btn" id="predict-btn" onclick="predict()">
+      ⚡ Predict My Productivity
+    </button>
+
+    <div id="error-toast"></div>
+
+    <!-- Result -->
+    <div id="result">
+      <div class="score-ring">
+        <svg width="110" height="110" viewBox="0 0 110 110">
+          <circle class="ring-bg" cx="55" cy="55" r="45"/>
+          <circle class="ring-fill" id="ring-fill" cx="55" cy="55" r="45"/>
+        </svg>
+        <div class="score-center">
+          <div class="score-num" id="score-num">--</div>
+          <div class="score-unit">/ 100</div>
+        </div>
+      </div>
+      <div class="result-info">
+        <div class="result-label" id="result-label">--</div>
+        <div class="result-msg" id="result-msg"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Live value display for all sliders
+  document.querySelectorAll('input[type="range"]').forEach(el => {
+    el.addEventListener('input', () => {
+      document.getElementById('v_' + el.id).textContent = el.value;
+    });
+  });
+
+  const msgs = {
+    High:   "Great habits! You're in the top tier. Keep up the consistent study schedule and healthy lifestyle.",
+    Medium: "Solid foundation. Small improvements in screen time or sleep could push you into the high tier.",
+    Low:    "There's room to grow. Try reducing distractions and increasing focused study time."
+  };
+
+  async function predict() {
+    const btn = document.getElementById('predict-btn');
+    const toast = document.getElementById('error-toast');
+    toast.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Predicting…';
+
+    const fields = [
+      'study_hours_per_day','phone_usage_hours','social_media_hours',
+      'youtube_hours','gaming_hours','breaks_per_day','coffee_intake_mg',
+      'assignments_completed','attendance_percentage','focus_score',
+      'sleep_hours','stress_level','exercise_minutes'
+    ];
+
+    const payload = {};
+    fields.forEach(f => {
+      payload[f] = parseFloat(document.getElementById(f).value);
+    });
+
+    try {
+      const res = await fetch('/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.error) throw new Error(data.error);
+
+      const score = data.score;
+      const label = data.label;
+
+      // Update ring
+      const circumference = 2 * Math.PI * 45; // ~282.7
+      const offset = circumference * (1 - score / 100);
+      const ring = document.getElementById('ring-fill');
+      ring.style.strokeDashoffset = offset;
+      ring.className = 'ring-fill ring-' + label;
+
+      document.getElementById('score-num').textContent = score.toFixed(1);
+
+      const lbl = document.getElementById('result-label');
+      lbl.textContent = label + ' Productivity';
+      lbl.className = 'result-label label-' + label;
+
+      document.getElementById('result-msg').textContent = msgs[label];
+
+      const resultEl = document.getElementById('result');
+      resultEl.classList.remove('show');
+      void resultEl.offsetWidth;
+      resultEl.classList.add('show');
+
+    } catch (e) {
+      toast.style.display = 'block';
+      toast.textContent = '⚠ ' + (e.message || 'Could not connect to the server.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '⚡ Predict My Productivity';
+    }
+  }
+</script>
+</body>
+</html>
