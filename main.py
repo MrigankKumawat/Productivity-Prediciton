@@ -5,6 +5,9 @@ import os
 
 app = Flask(__name__, static_folder=".")
 
+from flask_cors import CORS
+CORS(app)
+
 model = joblib.load("model.pkl")
 pipeline = joblib.load("pipeline.pkl")
 
